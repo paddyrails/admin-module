@@ -15,12 +15,19 @@ type NavigationItem = {
   selected?: boolean , 
   route: string
 }
+type Separator = {
+  separator: boolean,
+}
 
-const items: Array<NavigationItem> = [
+const items: Array<NavigationItem | Separator> = [
   { name: 'dashboard', icon: 'k-i-grid' , route: '/' },
+  { separator: true},
   { name: 'planning', icon: 'k-i-calendar', route: '/planning' },
+  { separator: true},
   { name: 'profile', icon: 'k-i-user', route: '/profile' },  
-  { name: 'info', icon: 'k-i-information', route: '/info' }
+  { separator: true},
+  { name: 'info', icon: 'k-i-information', route: '/info' },
+  { separator: true},
 ];
 
 export interface DrawerProps {
@@ -78,9 +85,9 @@ const DrawerContainer = (props: any) => {
           expanded={state.expanded}
           animation={{duration: 100}}
           items={items.map((item) => ({
-                ...item,
-                text: `custom.${item.name}`,
-                selected: location.pathname.includes(item.route)
+              ...item,
+              text: `custom.${item.name}`,
+              selected: location.pathname.includes(item.route)
             }))
           }
           position='start'
