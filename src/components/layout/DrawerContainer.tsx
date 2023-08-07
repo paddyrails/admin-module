@@ -1,123 +1,99 @@
-import * as React from 'react';
-import { withRouter } from 'react-router-dom';
-import { Drawer, DrawerContent, DrawerItem } from '@progress/kendo-react-layout';
+import { useState } from 'react'
 import { Button } from '@progress/kendo-react-buttons';
-const CustomItem = props => {
-  const {
-    visible,
-    ...others
-  } = props;
-  const arrowDir = props['data-expanded'] ? 'k-i-arrow-chevron-down' : 'k-i-arrow-chevron-right';
-  return <React.Fragment>
-        {props.visible === false ? null : <DrawerItem {...others}>
-          <span className={'k-icon ' + props.icon} />
-          <span className={'k-item-text'}>{props.text}</span>
-          {props['data-expanded'] !== undefined && <span className={"k-icon " + arrowDir} style={{
-        position: "absolute",
-        right: 10
-      }} />}
-        </DrawerItem>}
-      </React.Fragment>;
-};
-const DrawerContainer = props => {
-  const [drawerExpanded, setDrawerExpanded] = React.useState(true);
-  const [items, setItems] = React.useState([{
-    text: 'Education',
-    icon: 'k-i-pencil',
-    id: 1,
-    selected: true,
-    route: '/'
-  }, {
-    separator: true
-  }, {
-    text: 'Food',
-    icon: 'k-i-heart',
-    id: 2,
-    ['data-expanded']: true,
-    route: '/food'
-  }, {
-    text: 'Japanese Food',
-    icon: 'k-i-minus',
-    id: 4,
-    parentId: 2,
-    route: '/food/japanese'
-  }, {
-    text: 'Italian Food',
-    icon: 'k-i-minus',
-    id: 5,
-    parentId: 2,
-    route: '/food/italian'
-  }, {
-    separator: true
-  }, {
-    text: 'Travel',
-    icon: 'k-i-globe-outline',
-    ['data-expanded']: true,
-    id: 3,
-    route: '/travel'
-  }, {
-    text: 'Europe',
-    icon: 'k-i-minus',
-    id: 6,
-    parentId: 3,
-    route: '/travel/europe'
-  }, {
-    text: 'North America',
-    icon: 'k-i-minus',
-    id: 7,
-    parentId: 3,
-    route: '/travel/america'
-  }]);
-  const handleClick = () => {
-    setDrawerExpanded(!drawerExpanded);
-  };
-  const onSelect = ev => {
-    const currentItem = ev.itemTarget.props;
-    const isParent = currentItem['data-expanded'] !== undefined;
-    const nextExpanded = !currentItem['data-expanded'];
-    const newData = items.map(item => {
-      const {
-        selected,
-        ['data-expanded']: currentExpanded,
-        id,
-        ...others
-      } = item;
-      const isCurrentItem = currentItem.id === id;
-      return {
-        selected: isCurrentItem,
-        ['data-expanded']: isCurrentItem && isParent ? nextExpanded : currentExpanded,
-        id,
-        ...others
-      };
-    });
-    props.history.push(ev.itemTarget.props.route);
-    setItems(newData);
-  };
-  const data = items.map(item => {
-    const {
-      parentId,
-      ...others
-    } = item;
-    if (parentId !== undefined) {
-      const parent = items.find(parent => parent.id === parentId);
-      return {
-        ...others,
-        visible: parent['data-expanded']
-      };
-    }
-    return item;
-  });
-  return <div>
-      <div className="custom-toolbar">
-        <Button icon="menu" fillMode="flat" onClick={handleClick} />
-        <span className="title">Categories</span>
-      </div>
-      <Drawer expanded={drawerExpanded} mode='push' width={180} items={data} item={CustomItem} onSelect={onSelect}>
-        <DrawerContent>
-          {props.children}
-        </DrawerContent>
-      </Drawer>
+
+import { useNavigate, useLocation } from 'react-router-dom'
+import { Drawer, DrawerContent, DrawerSelectEvent } from '@progress/kendo-react-layout';
+import {
+  AppBar,
+  AppBarSection,
+  AppBarSpacer,
+} from "@progress/kendo-react-layout";
+
+type NavigationItem = {
+  name: string; 
+  icon: string;
+  selected?: boolean , 
+  route: string
+}
+
+const items: Array<NavigationItem> = [
+  { name: 'dashboard', icon: 'k-i-grid' , route: '/' },
+  { name: 'planning', icon: 'k-i-calendar', route: '/planning' },
+  { name: 'profile', icon: 'k-i-user', route: '/profile' },  
+  { name: 'info', icon: 'k-i-information', route: '/info' }
+];
+
+export interface DrawerProps {
+  expanded: boolean,
+  selectedId: number,
+  isSmallerScreen: boolean,
+}
+
+const DrawerContainer = (props: any) => {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [state, setState] = useState<DrawerProps>({
+    expanded: true,
+    selectedId: items.findIndex(x => x.selected === true),
+    isSmallerScreen: window.innerWidth < 768
+  })
+
+  const handleClick = (e: any) => {
+    setState(prevState => ({
+      ...prevState,
+      expanded: !prevState.expanded
+    }))
+  }
+
+  const handleSelect = (e: DrawerSelectEvent) => {
+    console.log(e.itemTarget.props);
+    navigate(e.itemTarget.props.route)
+  }  
+ 
+  return <div style={{width: '100%', height: '100%'}}>
+
+      <AppBar>
+        <AppBarSection>
+          <Button className="k-button k-button-md k-rounded-md k-button-flat k-button-flat-base" onClick={handleClick}>
+            <span className="k-icon k-i-menu" />
+          </Button>
+        </AppBarSection>
+
+        <AppBarSpacer
+          style={{
+            width: 4,
+          }}
+        />
+
+        <AppBarSection>
+          <h3 className="title">ADMIN</h3>
+        </AppBarSection>
+        <AppBarSpacer />
+
+        <AppBarSection>          
+        </AppBarSection>
+      </AppBar>
+
+      <Drawer
+          expanded={state.expanded}
+          animation={{duration: 100}}
+          items={items.map((item) => ({
+                ...item,
+                text: `custom.${item.name}`,
+                selected: location.pathname.includes(item.route)
+            }))
+          }
+          position='start'
+          mode={state.isSmallerScreen ? 'overlay' : 'push'}
+          mini={state.isSmallerScreen ? false : true}
+          onOverlayClick={handleClick}
+          onSelect={handleSelect}
+        >
+          <DrawerContent >
+            {props.children}
+          </DrawerContent>
+        </Drawer>
     </div>;
 };
 
-export default withRouter(DrawerContainer);
+export default DrawerContainer;
